@@ -1,0 +1,501 @@
+{
+  "name": "SharkD",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9439dd4b-7fe8-4d2c-a6e6-2a767e3cb681",
+              "name": "FighterA",
+              "value": "={{$json[\"message\"] [\"text\"].split (\"vs\") [0].trim()}}",
+              "type": "string"
+            },
+            {
+              "id": "be4af57c-6c8d-45ee-8d11-6959319e62d6",
+              "name": "FigherB",
+              "value": "={{$json[\"message\"][\"text\"].split(\"vs\")[1].replace(/\\s*\\d+.*$/, \"\").trim()}}",
+              "type": "string"
+            },
+            {
+              "id": "aadb2880-b5b6-4e2d-a185-46242c0e36a4",
+              "name": "ScoreA",
+              "value": "={{$json[\"message\"][\"text\"].match(/(\\d+)\\s*vs/)?.[1] || \"undefined\"}}",
+              "type": "string"
+            },
+            {
+              "id": "b20fa9e2-320d-48fa-b1ee-a5bb660b1b7d",
+              "name": "ScoreB",
+              "value": "={{$json[\"message\"][\"text\"].match(/vs\\s*(\\d+)/)?.[1] || \"undefined\"}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -240,
+        192
+      ],
+      "id": "1636f67f-1a6c-49f9-a332-df3853137b54",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c521cb2e-7d57-4e08-8b2e-0ee84c471031",
+              "leftValue": "={{ $json.home_team }}",
+              "rightValue": "={{ $('Edit Fields').item.json.FighterA }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "9442d767-4614-452b-84af-0cd585a2ae7c",
+              "leftValue": "={{ $json.home_team }}",
+              "rightValue": "={{ $('Edit Fields').item.json.FigherB }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "3371ed8d-70d5-4948-8bdc-5d36c4f27861",
+              "leftValue": "={{ $json.away_team }}",
+              "rightValue": "={{ $('Edit Fields').item.json.FighterA }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "fe73faf1-16f6-4e4e-aaf2-89e972a1f169",
+              "leftValue": "={{ $json.away_team }}",
+              "rightValue": "={{ $('Edit Fields').item.json.FigherB }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        320,
+        0
+      ],
+      "id": "8e087da2-7fea-4380-ad53-9f356b71edf6",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "NFL",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "HomeTeam",
+              "condition": "fullText",
+              "searchFunction": "plfts",
+              "keyValue": "={{ $('Edit Fields').item.json.FighterA }}"
+            },
+            {
+              "keyName": "AwayTeam",
+              "condition": "fullText",
+              "searchFunction": "plfts",
+              "keyValue": "={{ $('Edit Fields').item.json.FigherB }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        16,
+        192
+      ],
+      "id": "f50a9891-e468-4412-9c50-53ec81f60bab",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "DRSV9gMnZCJwVcqJ",
+          "name": "Supabase account 103"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst fighterData = items.map(item => item.json);\n\nreturn [{ json: { fighterData }}];\n\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        192
+      ],
+      "id": "dab78dab-c70e-4a74-a549-e9fac1d0dfd2",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "url": "https://newsapi.org/v2/everything",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.FighterA }} OR {{ $json.FigherB }}"
+            },
+            {
+              "name": "prompt",
+              "value": "={{ new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T') [0] }}"
+            },
+            {
+              "name": "sortBy",
+              "value": "Popularity"
+            },
+            {
+              "name": "apiKey",
+              "value": "330999428ad046fdbee5b9c8c1668ee3"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        16,
+        384
+      ],
+      "id": "be80fe83-dc28-480c-918f-fc59a6fba706",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Please analyze {{ JSON.stringify($json.articles) }} and provide sentiment analysis on whether the total score is going to be over or under {{ $('Edit Fields').item.json.ScoreB }} after the first half of the match ending with a total score of {{ $('Edit Fields').item.json.ScoreA }}: {{ $('Telegram Trigger').item.json.message.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        208,
+        384
+      ],
+      "id": "c6cf6f95-d49a-4347-98b8-51ef21564e77",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "o6ERPeEqU3Ch3x6P",
+          "name": "OpenAi account 77"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        560,
+        176
+      ],
+      "id": "83401ce0-a187-44fc-b4e6-21e26c09b482",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "const oddsData = items[0].json;\nconst fighterData = items[1].json;\nconst sentimentData = items[2].json;\n\nconst finalOutput = {\n  oddsData,\n  fighterData,\n  sentimentData\n};\n\nreturn [{ json: finalOutput }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        192
+      ],
+      "id": "b91abe42-8638-4a12-8320-857c5438f4c9",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert sports betting analyst. Analyze the following three sets of data for the upcoming second halftime fight between {{ $('Telegram Trigger').first().json.message.text }}\n\nSection 1: Odds Data {{ JSON.stringify($json.oddsData) }}\n\nThis section includes the betting odds for both fighters from multiple bookmakers. Review the prices, compare them, and assess any discrepancies or consensus among the bookmakers.\n\nSection 2: Fighter Data: {{ JSON.stringify($json.fighterData)  }}\n\nThis section contains all the previous statistics from previous bouts (from 1/2025 to the present) for each team. Consider factors like win/loss records, significant strikes, submission attempts, reach, and other relevant stats.\n\nSection 3: Sentiment Analysis {{ JSON.stringify($json.sentimentData) }}\n\nThis section provides a sentiment analysis summary from news articles related to the upcoming second halftime of the fight. Evaluate the overall public and expert sentiment regarding each fighter's prospects. \n\nBased on the above information please:\n\nRecommend whether the NBA score will be over or under {{ $node[\"Edit Fields\"].json.ScoreB }}. Advise whether the current betting odds are favorable enough to justify placing a bet on the recommended score based on the score of the first half being {{ $node[\"Edit Fields\"].json.ScoreA }} \nExplain your reasoning, taking into account statistical performance, odds dicrepancies, and overall sentiment.\nProvide your final recommendation and a brief explanation for your decision.\n\nOutput Format:\nReturn the final result as plain text with consistant styling for Telegram(html).\n\nPut percentage to the analysis.\n\n\n\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        192
+      ],
+      "id": "243fe964-8c74-4ca7-ba46-ee73c0fe0803",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-thinking-exp-1219",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        784,
+        400
+      ],
+      "id": "20dcdf8a-4038-42a5-a252-aac43e22f906",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Idxnsi4pwHluK7Vb",
+          "name": "Visky - Google Gemini(PaLM) Api for AI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.the-odds-api.com/v4/sports/basketball_nba/odds/?regions=us&markets=h2h&apiKey=f552c71a7e642ada7c6f76e3bc3aeefb",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        16,
+        0
+      ],
+      "id": "9e19ddb2-1157-4ec4-8375-cbb92ef4629c",
+      "name": "The Odds Data"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -400,
+        192
+      ],
+      "id": "b07939d8-5fa0-42f6-b944-dc4bba0635fa",
+      "name": "Telegram Trigger",
+      "webhookId": "23dbe4ff-4db6-4041-ac1a-3de429bc30ce",
+      "credentials": {
+        "telegramApi": {
+          "id": "0ZwERz7prF11wUAs",
+          "name": "Telegram account 59"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "info@ilumalab.com",
+        "toEmail": "info@ilumalab.com",
+        "subject": "Odds",
+        "html": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1248,
+        192
+      ],
+      "id": "83d785db-b6a4-46ce-9066-758999027490",
+      "name": "Send email",
+      "webhookId": "2ec4585c-d156-41a4-b7c0-6b73953eae98",
+      "credentials": {
+        "smtp": {
+          "id": "OnzSVKbS1rpS1Ptz",
+          "name": "SMTP account 10"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "The Odds Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "The Odds Data": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0fe6a1b3-bc1d-45da-b660-af75c5b4b587",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a39925a189fc4958777cfbc2ee952f96a625e56b8dde120f89d58a7cdacf694a"
+  },
+  "id": "m89wXom6ztN9TY9l",
+  "tags": []
+}
